@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
-import { Button, Container, Row, Col, Form } from 'react-bootstrap';
+import { Button, Container, Row, Col, Form, ToggleButtonGroup, ToggleButton } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 
 const App: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [textToEmbed, setTextToEmbed] = useState<string>('');
+  const [decodedStrings, setDecodedStrings] = useState<string[]>([]);
+  const [mode, setMode] = useState<'encode' | 'decode'>('encode');
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTextToEmbed(e.target.value);
+  };
 
   const handleImageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,44 +30,35 @@ const App: React.FC = () => {
           const uint8Array = new Uint8Array(binaryData);
           const numberArray: number[] = Array.from(uint8Array);
           const base64EncodedData: string = btoa(String.fromCharCode.apply(null, numberArray));
+          let imageData = base64EncodedData;
 
-
-          // Create a JSON object with the encoded binary data and text
-          const requestData = {
-            image: base64EncodedData,
-            text: textToEmbed,
-          };
-
-          // Make a POST request to the Firebase Function endpoint
-          const ENDPOINT = "https://embed-text-endpoint-rexemydxsa-uc.a.run.app";
-          const response = await axios.post(ENDPOINT, requestData, {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-
-          // Set the updated image source
-          const newbase64EncodedData = response.data.modifiedImageData
-          console.log(newbase64EncodedData)
-          // Decode the Base64-encoded image data
-          const decodedImageData = atob(newbase64EncodedData);
-      
-          // Convert the decoded data to a Uint8Array
-          const newuint8Array = new Uint8Array(decodedImageData.length);
-          for (let i = 0; i < decodedImageData.length; ++i) {
-            uint8Array[i] = decodedImageData.charCodeAt(i);
+          if (mode === 'encode') {
+            const requestData = {
+              image: base64EncodedData,
+              text: textToEmbed,
+            };
+  
+            const ENDPOINT = "https://embed-text-endpoint-rexemydxsa-uc.a.run.app";
+            const response = await axios.post(ENDPOINT, requestData, {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            imageData = response.data.modifiedImageData;
+          } else if (mode === 'decode') {
+            const requestData = {
+              image: base64EncodedData
+            };
+            const ENDPOINT = "https://decode-strings-endpoint-rexemydxsa-uc.a.run.app";
+            const response = await axios.post(ENDPOINT, requestData, {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            setDecodedStrings(response.data.decodedStrings);
           }
-      
-          // Create a Blob from the Uint8Array
-          const blob = new Blob([newuint8Array], { type: 'image/jpeg' });
-      
-          // Create a data URL from the Blob
-          const imageUrl = URL.createObjectURL(blob);
-      
-          // Update the image source in the state
-          // setImageSrc(imageUrl);
-          setImageSrc(`data:image/jpeg;base64,${response.data.modifiedImageData}`);
+
+          setImageSrc(`data:image/jpeg;base64,${imageData}`);
         } catch (error) {
           console.error('Error sending data to Firebase function:', error);
         }
@@ -83,31 +80,58 @@ const App: React.FC = () => {
     }
   };
 
+  const handleModeChange = (value: 'encode' | 'decode') => {
+    setMode(value);
+  };
+
+
   return (
     <Container className="mt-5">
       <Row className="justify-content-center">
         <Col md={6}>
           <Form onSubmit={handleImageSubmit}>
+            <Form.Group controlId="formMode">
+              <ToggleButtonGroup className='mb-2' type="radio" name="mode" value={mode} onChange={handleModeChange}>
+                <ToggleButton value="encode" id="encode">Encode</ToggleButton>
+                <ToggleButton value="decode" id="decode">Decode</ToggleButton>
+              </ToggleButtonGroup>
+            </Form.Group>
             <Form.Group controlId="formImage">
-              <Form.Label>Submit Image</Form.Label>
+              <Form.Label>{mode === 'encode' ? 'Image to Encode' : 'Image to Decode'}</Form.Label>
               <Form.Control type="file" accept="image/*" />
             </Form.Group>
-            <Form.Group controlId="embedText" className='mt-3'>
-              <Form.Label>Hidden Text to Add</Form.Label>
-              <Form.Control type="text" value={textToEmbed} onChange={(e) => setTextToEmbed(e.target.value)} />
-            </Form.Group>
+            {mode === 'encode' && (
+              <Form.Group controlId="embedText" className="mt-3">
+                <Form.Label>Text to Embed</Form.Label>
+                <Form.Control type="text" value={textToEmbed} onChange={handleTextChange}/>
+              </Form.Group>
+            )}
             <Button variant="primary" type="submit" className='mt-3'>
-              Encode Image
+              {mode === 'encode' ? 'Encode Image' : 'Decode Image'}
             </Button>
           </Form>
-
-          {imageSrc && (
+          {imageSrc && mode === 'encode' && (
             <div className="mt-4">
-              <h5>Encoded Image:</h5>
-              <img src={imageSrc} alt="Updated" className="img-fluid" />
-              <Button variant="success" onClick={handleDownloadClick} className='mt-3'>
-                Download Image
-              </Button>
+              <Col>
+                <h5>Encoded Image:</h5>
+                <img src={imageSrc} alt="Updated" className="img-fluid" />
+              </Col>
+                <Button variant="success" onClick={handleDownloadClick} className='mt-3'>
+                  Download Image
+                </Button>
+            </div>
+          )}
+          {mode === 'decode' && decodedStrings.length > 0 && imageSrc && (
+            <div className="mt-4">
+              <Col>
+                <h5>Decoded Strings:</h5>
+                <ul>
+                  {decodedStrings.map((decodedString, index) => (
+                    <li key={index}>{decodedString}</li>
+                  ))}
+                </ul>
+                <img src={imageSrc} alt="Updated" className="img-fluid" />
+              </Col>
             </div>
           )}
         </Col>
