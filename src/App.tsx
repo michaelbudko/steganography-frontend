@@ -29,7 +29,8 @@ const App: React.FC = () => {
           // Convert ArrayBuffer to Uint8Array for Axios
           const uint8Array = new Uint8Array(binaryData);
           const numberArray: number[] = Array.from(uint8Array);
-          const base64EncodedData: string = btoa(String.fromCharCode.apply(null, numberArray));
+          // const base64EncodedData: string = btoa(String.fromCharCode.apply(null, numberArray));
+          const base64EncodedData: string = btoa(String.fromCharCode(...numberArray));
           let imageData = base64EncodedData;
 
           if (mode === 'encode') {
