@@ -59,15 +59,14 @@ const App: React.FC = () => {
               text: textToEmbed,
             };
   
-            // const ENDPOINT = "https://modify-and-store-image-rexemydxsa-uc.a.run.app";
-            const ENDPOINT = "http://127.0.0.1:5001/steganography-b3e10/us-central1/modify_and_store_image";
+            const ENDPOINT = "https://modify-and-store-image-rexemydxsa-uc.a.run.app";
             const response = await axios.post(ENDPOINT, requestData, {
               headers: {
                 'Content-Type': 'application/json',
               },
             });
             console.log(response.data)
-            imageData = response.data.modifiedImgRef;
+            imageData = response.data.downloadURL;
           } else if (mode === 'decode') {
             const uint8Array = new Uint8Array(binaryData);
             const numberArray: number[] = Array.from(uint8Array);
