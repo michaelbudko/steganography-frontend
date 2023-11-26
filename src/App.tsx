@@ -66,7 +66,7 @@ const App: React.FC = () => {
               },
             });
             console.log(response.data)
-            imageData = response.data.downloadURL;
+            imageData = response.data.downloadURL; // not really necessary since the URL hasnt change
           } else if (mode === 'decode') {
             const uint8Array = new Uint8Array(binaryData);
             const numberArray: number[] = Array.from(uint8Array);
