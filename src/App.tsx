@@ -29,10 +29,7 @@ const App: React.FC = () => {
 
         try {
           // Convert ArrayBuffer to Uint8Array for Axios
-          const uint8Array = new Uint8Array(binaryData);
-          const numberArray: number[] = Array.from(uint8Array);
-          const base64EncodedData: string = btoa(String.fromCharCode(...numberArray));
-          let imageData = base64EncodedData;
+          let imageData = '';
 
           if (mode === 'encode') {
 
@@ -42,18 +39,25 @@ const App: React.FC = () => {
             console.log('File available at', downloadURL);
 
             const requestData = {
-              image: base64EncodedData,
+              imgRef: storageRef,
               text: textToEmbed,
             };
   
-            const ENDPOINT = "https://embed-text-endpoint-rexemydxsa-uc.a.run.app";
+            // const ENDPOINT = "https://modify-and-store-image-rexemydxsa-uc.a.run.app";
+            const ENDPOINT = "http://127.0.0.1:5001/steganography-b3e10/us-central1/modify_and_store_image";
             const response = await axios.post(ENDPOINT, requestData, {
               headers: {
                 'Content-Type': 'application/json',
               },
             });
-            imageData = response.data.modifiedImageData;
+            console.log(response.data)
+            imageData = response.data.modifiedImgRef;
           } else if (mode === 'decode') {
+            const uint8Array = new Uint8Array(binaryData);
+            const numberArray: number[] = Array.from(uint8Array);
+            const base64EncodedData: string = btoa(String.fromCharCode(...numberArray));
+            let imageData = base64EncodedData;
+  
             console.log('decode1')
             const requestData = {
               image: base64EncodedData
@@ -70,9 +74,9 @@ const App: React.FC = () => {
           }
           
           console.log('decode3')
-          setImageSrc(`data:image/jpeg;base64,${imageData}`);
-        } catch (error) {
-          console.error('Error sending data to Firebase function:', error);
+          setImageSrc(imageData);
+        } catch (error: any) {
+          console.error('Error sending data to Firebase function:', error.message);
         }
       };
 
