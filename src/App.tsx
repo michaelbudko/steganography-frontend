@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Button, Container, Row, Col, Form, ToggleButtonGroup, ToggleButton } from 'react-bootstrap';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
+import {storage} from './firebase-config.js';
 
 const App: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
@@ -29,11 +31,16 @@ const App: React.FC = () => {
           // Convert ArrayBuffer to Uint8Array for Axios
           const uint8Array = new Uint8Array(binaryData);
           const numberArray: number[] = Array.from(uint8Array);
-          // const base64EncodedData: string = btoa(String.fromCharCode.apply(null, numberArray));
           const base64EncodedData: string = btoa(String.fromCharCode(...numberArray));
           let imageData = base64EncodedData;
 
           if (mode === 'encode') {
+
+            const storageRef = ref(storage, 'images/' + file.name);
+            const uploadTask = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(uploadTask.ref);
+            console.log('File available at', downloadURL);
+
             const requestData = {
               image: base64EncodedData,
               text: textToEmbed,
@@ -47,6 +54,7 @@ const App: React.FC = () => {
             });
             imageData = response.data.modifiedImageData;
           } else if (mode === 'decode') {
+            console.log('decode1')
             const requestData = {
               image: base64EncodedData
             };
@@ -56,9 +64,12 @@ const App: React.FC = () => {
                 'Content-Type': 'application/json',
               },
             });
+            console.log('decode2')
+            console.log(response.data.decodedStrings)
             setDecodedStrings(response.data.decodedStrings);
           }
-
+          
+          console.log('decode3')
           setImageSrc(`data:image/jpeg;base64,${imageData}`);
         } catch (error) {
           console.error('Error sending data to Firebase function:', error);
@@ -122,7 +133,7 @@ const App: React.FC = () => {
                 </Button>
             </div>
           )}
-          {mode === 'decode' && decodedStrings.length > 0 && imageSrc && (
+          {mode === 'decode' && imageSrc && (
             <div className="mt-4">
               <Col>
                 <h5>Decoded Strings:</h5>
