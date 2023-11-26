@@ -4,12 +4,29 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import {storage} from './firebase-config.js';
+import { initializeApp } from "firebase/app";
+import { getStorage } from "firebase/storage";
 
 const App: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [textToEmbed, setTextToEmbed] = useState<string>('');
   const [decodedStrings, setDecodedStrings] = useState<string[]>([]);
   const [mode, setMode] = useState<'encode' | 'decode'>('encode');
+
+  const firebaseConfig = {
+    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.REACT_APP_FIREBASE_APP_ID,
+    measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
+};
+  
+
+  // Initialize Firebase and Storage
+  const app = initializeApp(firebaseConfig);
+  const storage = getStorage(app);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTextToEmbed(e.target.value);
