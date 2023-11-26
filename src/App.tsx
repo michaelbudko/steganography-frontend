@@ -3,7 +3,6 @@ import { Button, Container, Row, Col, Form, ToggleButtonGroup, ToggleButton } fr
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
-import {storage} from './firebase-config.js';
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
 
