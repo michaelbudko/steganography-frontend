@@ -38,21 +38,16 @@ const App: React.FC = () => {
 
     if (fileInput?.files?.length) {
       const file = fileInput.files[0];
-      const fileReader = new FileReader();
 
-      fileReader.onload = async (event) => {
-        const binaryData = event.target?.result as ArrayBuffer;
+      const encodeDecode = async () => {
 
         try {
-          // Convert ArrayBuffer to Uint8Array for Axios
-          let imageData = '';
+          const storageRef = ref(storage, 'images/' + file.name);
+          const uploadTask = await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(uploadTask.ref);
+          console.log('File available at', downloadURL);
 
           if (mode === 'encode') {
-
-            const storageRef = ref(storage, 'images/' + file.name);
-            const uploadTask = await uploadBytes(storageRef, file);
-            const downloadURL = await getDownloadURL(uploadTask.ref);
-            console.log('File available at', downloadURL);
 
             const requestData = {
               imgRef: storageRef,
@@ -65,37 +60,27 @@ const App: React.FC = () => {
                 'Content-Type': 'application/json',
               },
             });
-            console.log(response.data)
-            imageData = downloadURL; // not really necessary since the URL hasnt change
+            console.log(response.data);
           } else if (mode === 'decode') {
-            const uint8Array = new Uint8Array(binaryData);
-            const numberArray: number[] = Array.from(uint8Array);
-            const base64EncodedData: string = btoa(String.fromCharCode(...numberArray));
-            let imageData = base64EncodedData;
-  
-            console.log('decode1')
             const requestData = {
-              image: base64EncodedData
+              imgRef: storageRef
             };
-            const ENDPOINT = "https://decode-strings-endpoint-rexemydxsa-uc.a.run.app";
+            const ENDPOINT = "https://get-strings-from-modified-img-rexemydxsa-uc.a.run.app";
             const response = await axios.post(ENDPOINT, requestData, {
               headers: {
                 'Content-Type': 'application/json',
               },
             });
-            console.log('decode2')
-            console.log(response.data.decodedStrings)
-            setDecodedStrings(response.data.decodedStrings);
+            console.log(response.data.strings)
+            setDecodedStrings(response.data.strings);
           }
-          
-          console.log('decode3')
-          setImageSrc(imageData);
+          setImageSrc(downloadURL);
         } catch (error: any) {
           console.error('Error sending data to Firebase function:', error.message);
         }
       };
 
-      fileReader.readAsArrayBuffer(file);
+      encodeDecode();
     }
   };
 
@@ -114,6 +99,13 @@ const App: React.FC = () => {
 
   const handleModeChange = (value: 'encode' | 'decode') => {
     setMode(value);
+    setDecodedStrings([]);
+    setImageSrc(null);
+    setTextToEmbed('');
+    const fileInput = document.getElementById('formImage') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
 
