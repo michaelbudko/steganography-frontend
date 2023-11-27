@@ -66,7 +66,7 @@ const App: React.FC = () => {
               },
             });
             console.log(response.data)
-            imageData = response.data.downloadURL; // not really necessary since the URL hasnt change
+            imageData = downloadURL; // not really necessary since the URL hasnt change
           } else if (mode === 'decode') {
             const uint8Array = new Uint8Array(binaryData);
             const numberArray: number[] = Array.from(uint8Array);
@@ -99,12 +99,13 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDownloadClick = () => {
+  const handleDownloadClick = async () => {
     if (imageSrc) {
       // Create a virtual anchor element
       const link = document.createElement('a');
       link.href = imageSrc;
-      link.download = 'image.jpg';
+      link.target = '_blank';  // Open in a new tab
+      link.download = 'image.jpg';  // This is still required for some browsers
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
